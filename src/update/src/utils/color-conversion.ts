@@ -92,9 +92,9 @@ export function parseHSL(color: string): { h: number; s: number; l: number } | n
  * @returns HSL CSS string like "hsl(120, 100%, 50%)"
  */
 export function generateHslString(h: number, s: number, l: number): string {
-  h = validateNumber(h, COLOR_SPACE.HSL.HUE.MIN, COLOR_SPACE.HSL.HUE.MAX);
-  s = validateNumber(s, COLOR_SPACE.HSL.SATURATION.MIN, COLOR_SPACE.HSL.SATURATION.MAX);
-  l = validateNumber(l, COLOR_SPACE.HSL.LIGHTNESS.MIN, COLOR_SPACE.HSL.LIGHTNESS.MAX);
+  h = validateNumber(h, 0, 360);
+  s = validateNumber(s, 0, 100);
+  l = validateNumber(l, 0, 100);
 
   return `hsl(${Math.round(h)}, ${Math.round(s)}%, ${Math.round(l)}%)`;
 }
