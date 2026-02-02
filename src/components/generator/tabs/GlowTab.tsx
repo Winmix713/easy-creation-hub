@@ -7,7 +7,7 @@ import { useState } from 'react';
 import { cn } from '@/lib/utils';
 
 interface GlowTabProps {
-  state: SuperellipseState;
+  state?: SuperellipseState;
   onUpdate: (updates: Partial<SuperellipseState>) => void;
   onRandomizeGlow: () => void;
   // New glow editor props
@@ -62,6 +62,14 @@ export function GlowTab({
   const [isShapeOpen, setIsShapeOpen] = useState(true);
   const [isPositionOpen, setIsPositionOpen] = useState(false);
   const [isAnimationOpen, setIsAnimationOpen] = useState(false);
+
+  if (!state) {
+    return (
+      <div className="text-center py-8 text-neutral-500 text-sm">
+        <p>No state available</p>
+      </div>
+    );
+  }
 
   const isDark = state.backgroundColor === '#1a1a1a';
 

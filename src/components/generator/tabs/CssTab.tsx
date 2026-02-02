@@ -3,13 +3,21 @@ import { useState } from 'react';
 import { Copy, Check } from 'lucide-react';
 
 interface CssTabProps {
-  state: SuperellipseState;
+  state?: SuperellipseState;
   pathData: string;
 }
 
 export function CssTab({ state, pathData }: CssTabProps) {
   const [format, setFormat] = useState<'css' | 'scss' | 'tailwind' | 'js'>('css');
   const [copied, setCopied] = useState(false);
+
+  if (!state) {
+    return (
+      <div className="text-center py-8 text-neutral-500 text-sm">
+        <p>No state available</p>
+      </div>
+    );
+  }
 
   const generateCSS = () => {
     const gradient =

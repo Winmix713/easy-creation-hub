@@ -3,20 +3,7 @@ import { Eye, EyeOff, Lock, Unlock, Trash2, Copy, Plus, GripVertical } from 'luc
 import { DndProvider, useDrag, useDrop } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
 import { useRef, useState } from 'react';
-
-interface LayerPanelProps {
-  layers: Layer[];
-  selectedLayerId: string | null;
-  onSelectLayer: (id: string) => void;
-  onAddLayer: () => void;
-  onRemoveLayer: (id: string) => void;
-  onDuplicateLayer: (id: string) => void;
-  onToggleVisibility: (id: string) => void;
-  onToggleLock: (id: string) => void;
-  onSetBlendMode: (id: string, mode: BlendMode) => void;
-  onSetOpacity: (id: string, opacity: number) => void;
-  onReorderLayers?: (fromIndex: number, toIndex: number) => void;
-}
+import { useAppContext } from '@/contexts/AppContext';
 
 const BLEND_MODES: BlendMode[] = [
   'normal',
@@ -37,19 +24,21 @@ const BLEND_MODES: BlendMode[] = [
   'luminosity',
 ];
 
-export function LayerPanel({
-  layers,
-  selectedLayerId,
-  onSelectLayer,
-  onAddLayer,
-  onRemoveLayer,
-  onDuplicateLayer,
-  onToggleVisibility,
-  onToggleLock,
-  onSetBlendMode,
-  onSetOpacity,
-  onReorderLayers,
-}: LayerPanelProps) {
+export function LayerPanel() {
+  const { layers: layerContext } = useAppContext();
+  
+  const layers = layerContext.items ?? [];
+  const selectedLayerId = layerContext.selectedId;
+  const onSelectLayer = layerContext.select;
+  const onAddLayer = () => layerContext.add('shape');
+  const onRemoveLayer = layerContext.remove;
+  const onDuplicateLayer = layerContext.duplicate;
+  const onToggleVisibility = layerContext.toggleVisibility;
+  const onToggleLock = layerContext.toggleLock;
+  const onSetBlendMode = (id: string, mode: BlendMode) => layerContext.setBlendMode(id, mode);
+  const onSetOpacity = layerContext.setOpacity;
+  const onReorderLayers = layerContext.reorder;
+
   const selectedLayer = layers.find((l) => l.id === selectedLayerId);
   const [isDragging, setIsDragging] = useState(false);
 

@@ -2,11 +2,19 @@ import { SuperellipseState } from '@/types/layers';
 import { Download } from 'lucide-react';
 
 interface ExportTabProps {
-  state: SuperellipseState;
+  state?: SuperellipseState;
   pathData: string;
 }
 
 export function ExportTab({ state, pathData }: ExportTabProps) {
+  if (!state) {
+    return (
+      <div className="text-center py-8 text-neutral-500 text-sm">
+        <p>No state available</p>
+      </div>
+    );
+  }
+
   const generateSVG = () => {
     const gradient =
       state.fillType === 'linear'

@@ -2,11 +2,21 @@ import { SuperellipseState } from '@/types/layers';
 import { Lock, Unlock } from 'lucide-react';
 
 interface ShapeTabProps {
-  state: SuperellipseState;
+  state?: SuperellipseState;
   onUpdate: (updates: Partial<SuperellipseState>) => void;
 }
 
 export function ShapeTab({ state, onUpdate }: ShapeTabProps) {
+  // Guard against undefined state
+  if (!state) {
+    return (
+      <div className="text-center py-8 text-neutral-500 text-sm">
+        <p>No state available</p>
+        <p className="text-xs mt-1">Add a layer to edit shape properties</p>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       {/* Dimensions */}
