@@ -1,4 +1,6 @@
 import { SuperellipseState } from '@/types/layers';
+import { validateWidth, validateHeight, validateExponent } from '@/utils/validation';
+import { SHAPE_BOUNDS } from '@/constants/index';
 import { Lock, Unlock } from 'lucide-react';
 
 interface ShapeTabProps {
@@ -19,13 +21,13 @@ export function ShapeTab({ state, onUpdate }: ShapeTabProps) {
               <input
                 type="number"
                 value={state.width}
-                onChange={(e) => onUpdate({ width: Number(e.target.value) })}
-                min={50}
-                max={800}
+                onChange={(e) => onUpdate({ width: validateWidth(Number(e.target.value)) })}
+                min={SHAPE_BOUNDS.WIDTH.MIN}
+                max={SHAPE_BOUNDS.WIDTH.MAX}
                 className="w-full bg-neutral-800 border border-neutral-700 rounded px-3 py-2 text-white"
               />
             </div>
-            
+
             <button
               onClick={() => onUpdate({ lockAspectRatio: !state.lockAspectRatio })}
               className="mt-5 p-2 hover:bg-neutral-700 rounded transition-colors text-white"
@@ -33,15 +35,15 @@ export function ShapeTab({ state, onUpdate }: ShapeTabProps) {
             >
               {state.lockAspectRatio ? <Lock className="w-4 h-4" /> : <Unlock className="w-4 h-4" />}
             </button>
-            
+
             <div className="flex-1">
               <label className="text-xs text-neutral-400 mb-1 block">Height</label>
               <input
                 type="number"
                 value={state.height}
-                onChange={(e) => onUpdate({ height: Number(e.target.value) })}
-                min={50}
-                max={800}
+                onChange={(e) => onUpdate({ height: validateHeight(Number(e.target.value)) })}
+                min={SHAPE_BOUNDS.HEIGHT.MIN}
+                max={SHAPE_BOUNDS.HEIGHT.MAX}
                 className="w-full bg-neutral-800 border border-neutral-700 rounded px-3 py-2 text-white"
               />
             </div>
