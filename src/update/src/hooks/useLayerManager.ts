@@ -149,24 +149,36 @@ export function useLayerManager() {
     updateLayer(id, { name });
   }, [updateLayer]);
 
+  /**
+   * Undo the last action
+   * Returns to the previous history state if available
+   */
   const undo = useCallback(() => {
-    if (historyIndex > 0) {
-      const newIndex = historyIndex - 1;
-      const state = history[newIndex];
-      setLayers(state.layers);
-      setSelectedLayerId(state.selectedLayerId);
-      setHistoryIndex(newIndex);
+    if (historyIndex <= 0 || !history[historyIndex - 1]) {
+      return; // Can't undo, at the beginning
     }
+
+    const newIndex = historyIndex - 1;
+    const state = history[newIndex];
+    setLayers(state.layers);
+    setSelectedLayerId(state.selectedLayerId);
+    setHistoryIndex(newIndex);
   }, [history, historyIndex]);
 
+  /**
+   * Redo the last undone action
+   * Moves forward in history if available
+   */
   const redo = useCallback(() => {
-    if (historyIndex < history.length - 1) {
-      const newIndex = historyIndex + 1;
-      const state = history[newIndex];
-      setLayers(state.layers);
-      setSelectedLayerId(state.selectedLayerId);
-      setHistoryIndex(newIndex);
+    if (historyIndex >= history.length - 1 || !history[historyIndex + 1]) {
+      return; // Can't redo, at the end
     }
+
+    const newIndex = historyIndex + 1;
+    const state = history[newIndex];
+    setLayers(state.layers);
+    setSelectedLayerId(state.selectedLayerId);
+    setHistoryIndex(newIndex);
   }, [history, historyIndex]);
 
   const selectedLayer = layers.find((l) => l.id === selectedLayerId);
