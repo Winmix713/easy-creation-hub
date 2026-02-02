@@ -65,6 +65,10 @@ export function useSuperellipse() {
     }));
   };
 
+  /**
+   * Add a new gradient stop at the specified position
+   * Maintains sorted order by position
+   */
   const addGradientStop = (color: string, position: number) => {
     const newStop: GradientStop = {
       id: Date.now().toString(),
@@ -73,9 +77,7 @@ export function useSuperellipse() {
     };
     setState((prev) => ({
       ...prev,
-      gradientStops: [...prev.gradientStops, newStop].sort(
-        (a, b) => a.position - b.position
-      ),
+      gradientStops: sortGradientStops([...prev.gradientStops, newStop]),
     }));
   };
 
