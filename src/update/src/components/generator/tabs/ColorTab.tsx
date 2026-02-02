@@ -1,4 +1,6 @@
 import { SuperellipseState, GradientStop } from '@/types/layers';
+import { validateHexColor, validateGradientPosition, validateNumber } from '@/utils/validation';
+import { GRADIENT_DEFAULTS } from '@/constants/index';
 import { Plus, Trash2 } from 'lucide-react';
 
 interface ColorTabProps {
