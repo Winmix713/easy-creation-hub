@@ -86,25 +86,35 @@ export default function App() {
   } = usePresets();
 
   // ============================================================================
-  // Local State - Glow Editor
+  // Context State - Glow Editor (from EditorContext)
   // ============================================================================
-  
-  const [glowEnabled, setGlowEnabled] = useState<boolean>(true);
-  const [maskSize, setMaskSize] = useState<number>(0.3);
-  const [glowScale, setGlowScale] = useState<number>(0.9);
-  const [positionX, setPositionX] = useState<number>(-590);
-  const [positionY, setPositionY] = useState<number>(-1070);
-  const [noiseEnabled, setNoiseEnabled] = useState<boolean>(true);
-  const [noiseIntensity, setNoiseIntensity] = useState<number>(0.35);
+  // These settings are now centralized in EditorContext to eliminate prop drilling
+
+  const {
+    glowEnabled,
+    maskSize,
+    glowScale,
+    positionX,
+    positionY,
+  } = useGlowEditor();
+
+  // Also access noise settings from context
+  const {
+    noiseEnabled,
+    noiseIntensity,
+  } = useEditor();
 
   // ============================================================================
-  // Local State - Modals
+  // Context State - Modals (from EditorContext)
   // ============================================================================
-  // Note: Animation and scene settings are not currently used in rendering
-  // They should be moved to EditorContext when animation features are implemented
+  // Modal states are centralized in EditorContext
 
-  const [isExportModalOpen, setIsExportModalOpen] = useState<boolean>(false);
-  const [isShortcutsModalOpen, setIsShortcutsModalOpen] = useState<boolean>(false);
+  const {
+    isExportModalOpen,
+    isShortcutsModalOpen,
+    setIsExportModalOpen,
+    setIsShortcutsModalOpen,
+  } = useModals();
 
   // ============================================================================
   // Event Handlers - Memoized for Performance
