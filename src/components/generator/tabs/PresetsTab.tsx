@@ -5,7 +5,7 @@ import { QuickPresets } from '../QuickPresets';
 
 interface PresetsTabProps {
   presets: Preset[];
-  currentState: SuperellipseState;
+  currentState?: SuperellipseState;
   onSavePreset: (name: string, state: SuperellipseState) => void;
   onLoadPreset: (state: SuperellipseState) => void;
   onDeletePreset: (id: string) => void;
@@ -26,6 +26,14 @@ export function PresetsTab({
 }: PresetsTabProps) {
   const [presetName, setPresetName] = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  if (!currentState) {
+    return (
+      <div className="text-center py-8 text-neutral-500 text-sm">
+        <p>No state available</p>
+      </div>
+    );
+  }
 
   const handleSave = () => {
     if (presetName.trim()) {

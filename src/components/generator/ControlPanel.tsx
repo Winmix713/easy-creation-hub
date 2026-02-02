@@ -8,76 +8,23 @@ import { PresetsTab } from './tabs/PresetsTab';
 import { CssTab } from './tabs/CssTab';
 import { ExportTab } from './tabs/ExportTab';
 import { TransformTab } from './tabs/TransformTab';
-
-interface ControlPanelProps {
-  state: SuperellipseState;
-  pathData: string;
-  presets: Preset[];
-  selectedLayer?: Layer | null;
-  onUpdateState: (updates: Partial<SuperellipseState>) => void;
-  onUpdateGradientStop: (id: string, updates: Partial<GradientStop>) => void;
-  onAddGradientStop: (color: string, position: number) => void;
-  onRemoveGradientStop: (id: string) => void;
-  onRandomizeGlow: () => void;
-  onSavePreset: (name: string, state: SuperellipseState) => void;
-  onLoadPreset: (state: SuperellipseState) => void;
-  onDeletePreset: (id: string) => void;
-  onDuplicatePreset: (id: string) => void;
-  onExportPresets: () => void;
-  onImportPresets: (file: File) => void;
-  onUpdateTransform?: (layerId: string, transform: Partial<Layer['transform']>) => void;
-  // New glow editor props
-  glowEnabled?: boolean;
-  setGlowEnabled?: (v: boolean) => void;
-  maskSize?: number;
-  setMaskSize?: (v: number) => void;
-  glowScale?: number;
-  setGlowScale?: (v: number) => void;
-  positionX?: number;
-  setPositionX?: (v: number) => void;
-  positionY?: number;
-  setPositionY?: (v: number) => void;
-  noiseEnabled?: boolean;
-  setNoiseEnabled?: (v: boolean) => void;
-  noiseIntensity?: number;
-  setNoiseIntensity?: (v: number) => void;
-}
+import { useAppContext } from '@/contexts/AppContext';
 
 type TabType = 'shape' | 'color' | 'glow' | 'effects' | 'transform' | 'presets' | 'css' | 'export';
 
-export function ControlPanel({
-  state,
-  pathData,
-  presets,
-  selectedLayer,
-  onUpdateState,
-  onUpdateGradientStop,
-  onAddGradientStop,
-  onRemoveGradientStop,
-  onRandomizeGlow,
-  onSavePreset,
-  onLoadPreset,
-  onDeletePreset,
-  onDuplicatePreset,
-  onExportPresets,
-  onImportPresets,
-  onUpdateTransform,
-  glowEnabled,
-  setGlowEnabled,
-  maskSize,
-  setMaskSize,
-  glowScale,
-  setGlowScale,
-  positionX,
-  setPositionX,
-  positionY,
-  setPositionY,
-  noiseEnabled,
-  setNoiseEnabled,
-  noiseIntensity,
-  setNoiseIntensity,
-}: ControlPanelProps) {
+export function ControlPanel() {
+  const { superellipse, layers, presets, glow } = useAppContext();
   const [activeTab, setActiveTab] = useState<TabType>('shape');
+
+  const state = superellipse.state;
+  const pathData = superellipse.pathData;
+  const onUpdateState = superellipse.updateState;
+  const onUpdateGradientStop = superellipse.updateGradientStop;
+  const onAddGradientStop = superellipse.addGradientStop;
+  const onRemoveGradientStop = superellipse.removeGradientStop;
+  const onRandomizeGlow = superellipse.randomizeGlow;
+  const selectedLayer = layers.selected;
+  const onUpdateTransform = layers.updateTransform;
 
   const tabs: { id: TabType; label: string }[] = [
     { id: 'shape', label: 'Shape' },
@@ -96,7 +43,7 @@ export function ControlPanel({
       <div className="h-12 border-b border-neutral-800 flex items-center px-4">
         <h2 className="font-semibold text-white">Controls</h2>
         <span className="ml-auto text-xs text-neutral-500">
-          {state ? 'Layer selected' : 'No layer selected'}
+          {selectedLayer ? 'Layer selected' : 'No layer selected'}
         </span>
       </div>
 
@@ -136,20 +83,20 @@ export function ControlPanel({
             state={state}
             onUpdate={onUpdateState}
             onRandomizeGlow={onRandomizeGlow}
-            glowEnabled={glowEnabled}
-            setGlowEnabled={setGlowEnabled}
-            maskSize={maskSize}
-            setMaskSize={setMaskSize}
-            glowScale={glowScale}
-            setGlowScale={setGlowScale}
-            positionX={positionX}
-            setPositionX={setPositionX}
-            positionY={positionY}
-            setPositionY={setPositionY}
-            noiseEnabled={noiseEnabled}
-            setNoiseEnabled={setNoiseEnabled}
-            noiseIntensity={noiseIntensity}
-            setNoiseIntensity={setNoiseIntensity}
+            glowEnabled={glow.enabled}
+            setGlowEnabled={glow.setEnabled}
+            maskSize={glow.maskSize}
+            setMaskSize={glow.setMaskSize}
+            glowScale={glow.scale}
+            setGlowScale={glow.setScale}
+            positionX={glow.positionX}
+            setPositionX={glow.setPositionX}
+            positionY={glow.positionY}
+            setPositionY={glow.setPositionY}
+            noiseEnabled={glow.noiseEnabled}
+            setNoiseEnabled={glow.setNoiseEnabled}
+            noiseIntensity={glow.noiseIntensity}
+            setNoiseIntensity={glow.setNoiseIntensity}
           />
         )}
         
@@ -166,14 +113,14 @@ export function ControlPanel({
         
         {activeTab === 'presets' && (
           <PresetsTab
-            presets={presets}
+            presets={presets.items}
             currentState={state}
-            onSavePreset={onSavePreset}
-            onLoadPreset={onLoadPreset}
-            onDeletePreset={onDeletePreset}
-            onDuplicatePreset={onDuplicatePreset}
-            onExportPresets={onExportPresets}
-            onImportPresets={onImportPresets}
+            onSavePreset={presets.save}
+            onLoadPreset={superellipse.loadState}
+            onDeletePreset={presets.delete}
+            onDuplicatePreset={presets.duplicate}
+            onExportPresets={presets.export}
+            onImportPresets={presets.import}
           />
         )}
         

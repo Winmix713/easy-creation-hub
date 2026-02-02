@@ -1,11 +1,19 @@
 import { SuperellipseState } from '@/types/layers';
 
 interface EffectsTabProps {
-  state: SuperellipseState;
+  state?: SuperellipseState;
   onUpdate: (updates: Partial<SuperellipseState>) => void;
 }
 
 export function EffectsTab({ state, onUpdate }: EffectsTabProps) {
+  if (!state) {
+    return (
+      <div className="text-center py-8 text-neutral-500 text-sm">
+        <p>No state available</p>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       {/* Gaussian Blur */}

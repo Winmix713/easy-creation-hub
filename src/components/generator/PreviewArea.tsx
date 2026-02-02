@@ -29,13 +29,13 @@ type TabType = "shape" | "button" | "card";
 // Konstansok kiemelése
 const DEFAULT_TRANSITION = {
   type: "tween" as const,
-  ease: [0.4, 0, 0.2, 1],
+  ease: [0.4, 0, 0.2, 1] as [number, number, number, number],
   duration: 0.8,
 };
 
 const TAB_TRANSITION = {
   duration: 0.3,
-  ease: [0.4, 0, 0.2, 1],
+  ease: [0.4, 0, 0.2, 1] as [number, number, number, number],
 };
 
 // Glow preset konfigurációk

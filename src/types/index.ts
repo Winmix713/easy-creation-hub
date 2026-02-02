@@ -3,85 +3,8 @@
  * Ensures type safety across the application
  */
 
-// ============================================================================
-// Layer Types
-// ============================================================================
-
-export type LayerType = 'shape' | 'text' | 'image';
-
-export type BlendMode = 
-  | 'normal' 
-  | 'multiply' 
-  | 'screen' 
-  | 'overlay' 
-  | 'darken' 
-  | 'lighten'
-  | 'color-dodge'
-  | 'color-burn'
-  | 'hard-light'
-  | 'soft-light'
-  | 'difference'
-  | 'exclusion';
-
-export interface Transform {
-  x: number;
-  y: number;
-  rotation: number;
-  scaleX: number;
-  scaleY: number;
-}
-
-export interface GradientStop {
-  id: string;
-  color: string;
-  position: number; // 0-1
-}
-
-export interface SuperellipseState {
-  width: number;
-  height: number;
-  n: number;
-  solidColor: string;
-  useGradient: boolean;
-  gradientStops: GradientStop[];
-  gradientAngle: number;
-  strokeWidth: number;
-  strokeColor: string;
-  hasStroke: boolean;
-}
-
-export interface LayerContent {
-  superellipseState?: SuperellipseState;
-  text?: string;
-  imageUrl?: string;
-}
-
-export interface Layer {
-  id: string;
-  name: string;
-  type: LayerType;
-  visible: boolean;
-  locked: boolean;
-  opacity: number;
-  blendMode: BlendMode;
-  transform: Transform;
-  content?: LayerContent;
-  createdAt: number;
-  updatedAt: number;
-}
-
-// ============================================================================
-// Preset Types
-// ============================================================================
-
-export interface Preset {
-  id: string;
-  name: string;
-  state: SuperellipseState;
-  thumbnail?: string;
-  createdAt: number;
-  tags?: string[];
-}
+// Re-export all types from layers.ts as the canonical source
+export * from './layers';
 
 // ============================================================================
 // Animation Types
@@ -162,15 +85,6 @@ export interface ExportOptions {
   includeAnimation?: boolean;
   minify?: boolean;
 }
-
-// ============================================================================
-// Event Handler Types
-// ============================================================================
-
-export type UpdateStateHandler = (updates: Partial<SuperellipseState>) => void;
-export type UpdateLayerHandler = (id: string, updates: Partial<Layer>) => void;
-export type SelectLayerHandler = (id: string | null) => void;
-export type ReorderLayersHandler = (startIndex: number, endIndex: number) => void;
 
 // ============================================================================
 // Utility Types
