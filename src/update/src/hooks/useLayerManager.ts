@@ -7,43 +7,6 @@ interface HistoryState {
   selectedLayerId: string | null;
 }
 
-// Default SuperellipseState for new layers
-const DEFAULT_SUPERELLIPSE_STATE: SuperellipseState = {
-  width: 200,
-  height: 200,
-  exponent: 4,
-  cornerExponents: {
-    topLeft: 4,
-    topRight: 4,
-    bottomRight: 4,
-    bottomLeft: 4,
-  },
-  useIndividualCorners: false,
-  lockAspectRatio: false,
-  fillType: 'linear',
-  solidColor: '#667eea',
-  gradientStops: [
-    { id: '1', color: '#667eea', position: 0 },
-    { id: '2', color: '#764ba2', position: 100 },
-  ],
-  gradientAngle: 135,
-  glowEnabled: true,
-  glowIntensity: 100,
-  glowColor: '#667eea',
-  glowLayers: [
-    { id: '1', blur: 8, opacity: 80, enabled: true },
-    { id: '2', blur: 24, opacity: 60, enabled: true },
-    { id: '3', blur: 48, opacity: 40, enabled: true },
-    { id: '4', blur: 96, opacity: 20, enabled: true },
-  ],
-  blur: 0,
-  backdropBlur: 0,
-  strokeWidth: 0,
-  strokeColor: '#000000',
-  noiseOpacity: 0,
-  backgroundColor: '#1a1a1a',
-};
-
 export function useLayerManager() {
   const [layers, setLayers] = useState<Layer[]>([]);
   const [selectedLayerId, setSelectedLayerId] = useState<string | null>(null);
