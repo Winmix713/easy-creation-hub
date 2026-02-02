@@ -4,7 +4,7 @@ import { getPerCornerSuperellipsePath, getSuperellipsePath } from '@/utils/math'
 import { DEFAULT_SUPERELLIPSE_STATE } from '@/constants/index';
 
 export function useSuperellipse() {
-  const [state, setState] = useState<SuperellipseState>(DEFAULT_STATE);
+  const [state, setState] = useState<SuperellipseState>(DEFAULT_SUPERELLIPSE_STATE);
 
   const pathData = useMemo(() => {
     if (state.useIndividualCorners) {
