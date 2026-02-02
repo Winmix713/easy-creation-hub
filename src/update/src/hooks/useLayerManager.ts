@@ -48,16 +48,26 @@ const DEFAULT_SUPERELLIPSE_STATE: SuperellipseState = {
 export function useLayerManager() {
   const [layers, setLayers] = useState<Layer[]>([]);
   const [selectedLayerId, setSelectedLayerId] = useState<string | null>(null);
-  const [history, setHistory] = useState<HistoryState[]>([]);
-  const [historyIndex, setHistoryIndex] = useState(-1);
+  // Initialize history with empty state so there's always something to undo to
+  const [history, setHistory] = useState<HistoryState[]>([
+    { layers: [], selectedLayerId: null },
+  ]);
+  const [historyIndex, setHistoryIndex] = useState(0);
 
+  /**
+   * Saves the current state to history
+   * Removes any redo history when a new action is performed
+   */
   const saveHistory = useCallback((newLayers: Layer[], newSelectedId: string | null) => {
     setHistory((prev) => {
+      // Slice off the redo history (everything after current index)
       const newHistory = prev.slice(0, historyIndex + 1);
+      // Add new state
       newHistory.push({ layers: newLayers, selectedLayerId: newSelectedId });
-      return newHistory.slice(-MAX_HISTORY);
+      // Keep only MAX_HISTORY entries
+      return newHistory.slice(-HISTORY.MAX_ENTRIES);
     });
-    setHistoryIndex((prev) => Math.min(prev + 1, MAX_HISTORY - 1));
+    setHistoryIndex((prev) => Math.min(prev + 1, HISTORY.MAX_ENTRIES - 1));
   }, [historyIndex]);
 
   const addLayer = useCallback((type: LayerType) => {
