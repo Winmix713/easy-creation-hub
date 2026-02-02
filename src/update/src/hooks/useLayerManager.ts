@@ -1,12 +1,11 @@
 import { useState, useCallback } from 'react';
 import { Layer, LayerType, BlendMode, Transform, SuperellipseState, GradientStop } from '@/types/layers';
+import { HISTORY, DEFAULT_SUPERELLIPSE_STATE } from '@/constants/index';
 
 interface HistoryState {
   layers: Layer[];
   selectedLayerId: string | null;
 }
-
-const MAX_HISTORY = 50;
 
 // Default SuperellipseState for new layers
 const DEFAULT_SUPERELLIPSE_STATE: SuperellipseState = {
