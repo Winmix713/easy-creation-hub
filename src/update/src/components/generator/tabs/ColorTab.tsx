@@ -101,23 +101,23 @@ export function ColorTab({
                   <input
                     type="color"
                     value={stop.color}
-                    onChange={(e) => onUpdateGradientStop(stop.id, { color: e.target.value })}
+                    onChange={(e) => onUpdateGradientStop(stop.id, { color: validateHexColor(e.target.value) })}
                     className="w-10 h-10 rounded cursor-pointer"
                   />
                   <input
                     type="text"
                     value={stop.color}
-                    onChange={(e) => onUpdateGradientStop(stop.id, { color: e.target.value })}
+                    onChange={(e) => onUpdateGradientStop(stop.id, { color: validateHexColor(e.target.value) })}
                     className="flex-1 bg-neutral-800 border border-neutral-700 rounded px-2 py-2 text-white font-mono text-xs"
                   />
                   <input
                     type="number"
                     value={stop.position}
                     onChange={(e) =>
-                      onUpdateGradientStop(stop.id, { position: Number(e.target.value) })
+                      onUpdateGradientStop(stop.id, { position: validateGradientPosition(Number(e.target.value)) })
                     }
-                    min={0}
-                    max={100}
+                    min={GRADIENT_DEFAULTS.POSITION_MIN}
+                    max={GRADIENT_DEFAULTS.POSITION_MAX}
                     className="w-16 bg-neutral-800 border border-neutral-700 rounded px-2 py-2 text-white text-xs"
                   />
                   <span className="text-xs text-neutral-500">%</span>
