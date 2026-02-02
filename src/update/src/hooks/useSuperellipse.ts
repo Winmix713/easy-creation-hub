@@ -42,11 +42,25 @@ export function useSuperellipse() {
     });
   };
 
+  /**
+   * Helper function to sort gradient stops by position
+   * Ensures gradient renders correctly regardless of update order
+   */
+  const sortGradientStops = (stops: GradientStop[]): GradientStop[] => {
+    return [...stops].sort((a, b) => a.position - b.position);
+  };
+
+  /**
+   * Update a gradient stop and maintain sorted order
+   * Always sorts after update to ensure CSS gradient renders correctly
+   */
   const updateGradientStop = (id: string, updates: Partial<GradientStop>) => {
     setState((prev) => ({
       ...prev,
-      gradientStops: prev.gradientStops.map((stop) =>
-        stop.id === id ? { ...stop, ...updates } : stop
+      gradientStops: sortGradientStops(
+        prev.gradientStops.map((stop) =>
+          stop.id === id ? { ...stop, ...updates } : stop
+        )
       ),
     }));
   };
