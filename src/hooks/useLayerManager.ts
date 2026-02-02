@@ -1,64 +1,40 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef } from 'react';
 import { Layer, LayerType, BlendMode, Transform, SuperellipseState, GradientStop } from '@/types/layers';
+import { HISTORY, DEFAULT_SUPERELLIPSE_STATE } from '@/constants';
+import { validateOpacity } from '@/utils/validation';
 
 interface HistoryState {
   layers: Layer[];
   selectedLayerId: string | null;
 }
 
-const MAX_HISTORY = 50;
-
-// Default SuperellipseState for new layers
-const DEFAULT_SUPERELLIPSE_STATE: SuperellipseState = {
-  width: 200,
-  height: 200,
-  exponent: 4,
-  cornerExponents: {
-    topLeft: 4,
-    topRight: 4,
-    bottomRight: 4,
-    bottomLeft: 4,
-  },
-  useIndividualCorners: false,
-  lockAspectRatio: false,
-  fillType: 'linear',
-  solidColor: '#667eea',
-  gradientStops: [
-    { id: '1', color: '#667eea', position: 0 },
-    { id: '2', color: '#764ba2', position: 100 },
-  ],
-  gradientAngle: 135,
-  glowEnabled: true,
-  glowIntensity: 100,
-  glowColor: '#667eea',
-  glowLayers: [
-    { id: '1', blur: 8, opacity: 80, enabled: true },
-    { id: '2', blur: 24, opacity: 60, enabled: true },
-    { id: '3', blur: 48, opacity: 40, enabled: true },
-    { id: '4', blur: 96, opacity: 20, enabled: true },
-  ],
-  blur: 0,
-  backdropBlur: 0,
-  strokeWidth: 0,
-  strokeColor: '#000000',
-  noiseOpacity: 0,
-  backgroundColor: '#1a1a1a',
-};
-
+/**
+ * Layer Manager Hook
+ * Manages layers, selection, and history with proper undo/redo
+ */
 export function useLayerManager() {
+  // Initialize with empty state in history to allow undo to initial state
   const [layers, setLayers] = useState<Layer[]>([]);
   const [selectedLayerId, setSelectedLayerId] = useState<string | null>(null);
-  const [history, setHistory] = useState<HistoryState[]>([]);
-  const [historyIndex, setHistoryIndex] = useState(-1);
+  const [history, setHistory] = useState<HistoryState[]>([{ layers: [], selectedLayerId: null }]);
+  const [historyIndex, setHistoryIndex] = useState(0);
+  
+  // Use ref to avoid stale closure issues with historyIndex
+  const historyIndexRef = useRef(historyIndex);
+  historyIndexRef.current = historyIndex;
 
   const saveHistory = useCallback((newLayers: Layer[], newSelectedId: string | null) => {
     setHistory((prev) => {
-      const newHistory = prev.slice(0, historyIndex + 1);
+      // Use ref for current index to avoid stale closure
+      const currentIndex = historyIndexRef.current;
+      // Slice history up to current position (discard any "future" states after undo)
+      const newHistory = prev.slice(0, currentIndex + 1);
       newHistory.push({ layers: newLayers, selectedLayerId: newSelectedId });
-      return newHistory.slice(-MAX_HISTORY);
+      // Keep only last MAX_HISTORY entries
+      return newHistory.slice(-HISTORY.MAX_ENTRIES);
     });
-    setHistoryIndex((prev) => Math.min(prev + 1, MAX_HISTORY - 1));
-  }, [historyIndex]);
+    setHistoryIndex((prev) => Math.min(prev + 1, HISTORY.MAX_ENTRIES - 1));
+  }, []);
 
   const addLayer = useCallback((type: LayerType) => {
     const newLayer: Layer = {
@@ -94,11 +70,10 @@ export function useLayerManager() {
 
   const removeLayer = useCallback((id: string) => {
     const newLayers = layers.filter((layer) => layer.id !== id);
+    const newSelectedId = selectedLayerId === id ? null : selectedLayerId;
     setLayers(newLayers);
-    if (selectedLayerId === id) {
-      setSelectedLayerId(null);
-    }
-    saveHistory(newLayers, selectedLayerId === id ? null : selectedLayerId);
+    setSelectedLayerId(newSelectedId);
+    saveHistory(newLayers, newSelectedId);
   }, [layers, selectedLayerId, saveHistory]);
 
   const updateLayer = useCallback((id: string, updates: Partial<Layer>) => {
@@ -118,6 +93,8 @@ export function useLayerManager() {
       id: Date.now().toString(),
       name: `${layer.name} Copy`,
       zIndex: layers.length,
+      // Deep clone content to avoid reference issues
+      content: layer.content ? { ...layer.content } : undefined,
     };
 
     const newLayers = [...layers, newLayer];
@@ -143,11 +120,15 @@ export function useLayerManager() {
   }, [layers, selectedLayerId, saveHistory]);
 
   const reorderLayers = useCallback((fromIndex: number, toIndex: number) => {
+    if (fromIndex === toIndex) return;
+    if (fromIndex < 0 || toIndex < 0) return;
+    if (fromIndex >= layers.length || toIndex >= layers.length) return;
+
     const newLayers = [...layers];
     const [removed] = newLayers.splice(fromIndex, 1);
     newLayers.splice(toIndex, 0, removed);
     
-    // Update zIndex
+    // Update zIndex for all layers
     newLayers.forEach((layer, index) => {
       layer.zIndex = index;
     });
@@ -161,7 +142,8 @@ export function useLayerManager() {
   }, [updateLayer]);
 
   const setOpacity = useCallback((id: string, opacity: number) => {
-    updateLayer(id, { opacity });
+    const validatedOpacity = validateOpacity(opacity);
+    updateLayer(id, { opacity: validatedOpacity });
   }, [updateLayer]);
 
   const updateTransform = useCallback((id: string, transform: Partial<Transform>) => {
@@ -174,16 +156,19 @@ export function useLayerManager() {
   }, [layers, updateLayer]);
 
   const updateLayerName = useCallback((id: string, name: string) => {
-    updateLayer(id, { name });
+    if (!name.trim()) return; // Don't allow empty names
+    updateLayer(id, { name: name.trim() });
   }, [updateLayer]);
 
   const undo = useCallback(() => {
     if (historyIndex > 0) {
       const newIndex = historyIndex - 1;
       const state = history[newIndex];
-      setLayers(state.layers);
-      setSelectedLayerId(state.selectedLayerId);
-      setHistoryIndex(newIndex);
+      if (state) {
+        setLayers(state.layers);
+        setSelectedLayerId(state.selectedLayerId);
+        setHistoryIndex(newIndex);
+      }
     }
   }, [history, historyIndex]);
 
@@ -191,13 +176,15 @@ export function useLayerManager() {
     if (historyIndex < history.length - 1) {
       const newIndex = historyIndex + 1;
       const state = history[newIndex];
-      setLayers(state.layers);
-      setSelectedLayerId(state.selectedLayerId);
-      setHistoryIndex(newIndex);
+      if (state) {
+        setLayers(state.layers);
+        setSelectedLayerId(state.selectedLayerId);
+        setHistoryIndex(newIndex);
+      }
     }
   }, [history, historyIndex]);
 
-  const selectedLayer = layers.find((l) => l.id === selectedLayerId);
+  const selectedLayer = layers.find((l) => l.id === selectedLayerId) ?? null;
 
   return {
     layers,
