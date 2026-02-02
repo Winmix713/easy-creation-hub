@@ -37,10 +37,17 @@ export function useCanvasNavigation() {
     };
 
     const container = containerRef.current;
-    if (container) {
-      container.addEventListener('wheel', handleWheel, { passive: false });
-      return () => container.removeEventListener('wheel', handleWheel);
+    if (!container) {
+      return; // Early exit if container not found
     }
+
+    // Use passive: false to allow preventDefault
+    container.addEventListener('wheel', handleWheel, { passive: false });
+
+    // Ensure cleanup always happens
+    return () => {
+      container.removeEventListener('wheel', handleWheel);
+    };
   }, []);
 
   // Handle space + drag for panning
