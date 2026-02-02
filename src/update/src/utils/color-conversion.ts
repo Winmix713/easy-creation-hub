@@ -1,14 +1,11 @@
 import {
   hexToRgb,
   rgbToHex,
-  hexToHsl,
-  hslToHex,
   rgbToHsl,
   hslToRgb,
   isValidHexColor,
   normalizeHexColor,
   validateNumber,
-  COLOR_SPACE,
 } from './validation';
 
 /**
