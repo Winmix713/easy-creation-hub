@@ -3,7 +3,7 @@ import { useSuperellipse } from '@/hooks/useSuperellipse';
 import { useLayerManager } from '@/hooks/useLayerManager';
 import { useCanvasNavigation } from '@/hooks/useCanvasNavigation';
 import { usePresets } from '@/hooks/usePresets';
-import { useEditor, useGlowEditor, useModals, useNoiseSettings } from '@/context/EditorContext';
+import { useGlowEditor, useModals, useNoiseSettings } from '@/context/EditorContext';
 import { LayerPanel } from '@/components/generator/LayerPanel';
 import { CanvasContainer } from '@/components/generator/CanvasContainer';
 import { ControlPanel } from '@/components/generator/ControlPanel';
