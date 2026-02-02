@@ -82,14 +82,28 @@ export function useCanvasNavigation() {
     };
   }, [isPanning]);
 
+  /**
+   * Handle mouse down - records starting position for panning
+   * Stores the offset between mouse position and current pan value
+   */
   const handleMouseDown = useCallback((e: React.MouseEvent) => {
     if (isPanning) {
-      panStartRef.current = { x: e.clientX - panX, y: e.clientY - panY };
+      // Store the offset: where the mouse is relative to the current pan position
+      panStartRef.current = {
+        x: e.clientX - panX,
+        y: e.clientY - panY,
+      };
     }
   }, [isPanning, panX, panY]);
 
+  /**
+   * Handle mouse move - updates pan position while panning
+   * Calculates new pan by subtracting the stored offset from current mouse position
+   */
   const handleMouseMove = useCallback((e: React.MouseEvent) => {
     if (isPanning && e.buttons === 1) {
+      // Calculate new pan position
+      // New pan = current mouse - stored offset = how far we've moved
       setPanX(e.clientX - panStartRef.current.x);
       setPanY(e.clientY - panStartRef.current.y);
     }
