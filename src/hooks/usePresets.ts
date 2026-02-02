@@ -1,5 +1,8 @@
 import { useState, useCallback } from 'react';
 import { Preset, SuperellipseState } from '@/types/layers';
+import { DEFAULT_SUPERELLIPSE_STATE, FILE_IMPORT } from '@/constants';
+import { validateImportFile } from '@/utils/validation';
+import { isValidPreset, validatePresetImport } from '@/utils/type-guards';
 
 const BUILT_IN_PRESETS: Preset[] = [
   {
@@ -7,34 +10,11 @@ const BUILT_IN_PRESETS: Preset[] = [
     name: 'iOS Icon',
     createdAt: new Date().toISOString(),
     state: {
-      width: 200,
-      height: 200,
+      ...DEFAULT_SUPERELLIPSE_STATE,
       exponent: 4.5,
       cornerExponents: { topLeft: 4.5, topRight: 4.5, bottomRight: 4.5, bottomLeft: 4.5 },
-      useIndividualCorners: false,
       lockAspectRatio: true,
-      fillType: 'linear',
-      solidColor: '#667eea',
-      gradientStops: [
-        { id: '1', color: '#667eea', position: 0 },
-        { id: '2', color: '#764ba2', position: 100 },
-      ],
-      gradientAngle: 135,
-      glowEnabled: true,
       glowIntensity: 60,
-      glowColor: '#667eea',
-      glowLayers: [
-        { id: '1', blur: 8, opacity: 80, enabled: true },
-        { id: '2', blur: 24, opacity: 60, enabled: true },
-        { id: '3', blur: 48, opacity: 40, enabled: true },
-        { id: '4', blur: 96, opacity: 20, enabled: true },
-      ],
-      blur: 0,
-      backdropBlur: 0,
-      strokeWidth: 0,
-      strokeColor: '#000000',
-      noiseOpacity: 0,
-      backgroundColor: '#1a1a1a',
     },
   },
   {
@@ -42,50 +22,51 @@ const BUILT_IN_PRESETS: Preset[] = [
     name: 'Rounded Square',
     createdAt: new Date().toISOString(),
     state: {
-      width: 200,
-      height: 200,
+      ...DEFAULT_SUPERELLIPSE_STATE,
       exponent: 6,
       cornerExponents: { topLeft: 6, topRight: 6, bottomRight: 6, bottomLeft: 6 },
-      useIndividualCorners: false,
       lockAspectRatio: true,
-      fillType: 'solid',
+      fillType: 'solid' as const,
       solidColor: '#FF6B6B',
-      gradientStops: [{ id: '1', color: '#FF6B6B', position: 0 }],
-      gradientAngle: 135,
       glowEnabled: false,
       glowIntensity: 0,
-      glowColor: '#FF6B6B',
-      glowLayers: [
-        { id: '1', blur: 8, opacity: 80, enabled: false },
-        { id: '2', blur: 24, opacity: 60, enabled: false },
-        { id: '3', blur: 48, opacity: 40, enabled: false },
-        { id: '4', blur: 96, opacity: 20, enabled: false },
-      ],
-      blur: 0,
-      backdropBlur: 0,
       strokeWidth: 2,
-      strokeColor: '#000000',
-      noiseOpacity: 0,
-      backgroundColor: '#1a1a1a',
     },
   },
 ];
 
+/**
+ * Presets Management Hook
+ * Handles saving, loading, importing, and exporting presets
+ */
 export function usePresets() {
   const [presets, setPresets] = useState<Preset[]>(BUILT_IN_PRESETS);
+  const [importError, setImportError] = useState<string | null>(null);
 
   const savePreset = useCallback((name: string, state: SuperellipseState) => {
+    if (!name.trim()) {
+      console.error('Preset name cannot be empty');
+      return null;
+    }
+
     const newPreset: Preset = {
       id: Date.now().toString(),
-      name,
+      name: name.trim(),
       createdAt: new Date().toISOString(),
-      state,
+      state: { ...state }, // Clone to prevent mutation
     };
+    
     setPresets((prev) => [...prev, newPreset]);
     return newPreset;
   }, []);
 
   const deletePreset = useCallback((id: string) => {
+    // Don't allow deleting built-in presets
+    if (['ios-icon', 'rounded'].includes(id)) {
+      console.warn('Cannot delete built-in presets');
+      return;
+    }
+    
     setPresets((prev) => prev.filter((p) => p.id !== id));
   }, []);
 
@@ -98,32 +79,82 @@ export function usePresets() {
       id: Date.now().toString(),
       name: `${preset.name} Copy`,
       createdAt: new Date().toISOString(),
+      state: { ...preset.state }, // Clone state
     };
+    
     setPresets((prev) => [...prev, newPreset]);
   }, [presets]);
 
   const exportPresets = useCallback(() => {
-    const json = JSON.stringify(presets, null, 2);
-    const blob = new Blob([json], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'superellipse-presets.json';
-    a.click();
-    URL.revokeObjectURL(url);
+    try {
+      // Only export user-created presets
+      const userPresets = presets.filter((p) => !['ios-icon', 'rounded'].includes(p.id));
+      const json = JSON.stringify(userPresets, null, 2);
+      const blob = new Blob([json], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'superellipse-presets.json';
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error('Failed to export presets:', error);
+    }
   }, [presets]);
 
   const importPresets = useCallback((file: File) => {
+    setImportError(null);
+    
+    // Validate file
+    const fileValidation = validateImportFile(file, FILE_IMPORT.MAX_SIZE_MB);
+    if (!fileValidation.valid) {
+      setImportError(fileValidation.error || 'Invalid file');
+      console.error('Import validation failed:', fileValidation.error);
+      return;
+    }
+
     const reader = new FileReader();
+    
+    reader.onerror = () => {
+      setImportError('Failed to read file');
+      console.error('FileReader error');
+    };
+    
     reader.onload = (e) => {
       try {
-        const imported = JSON.parse(e.target?.result as string);
-        setPresets((prev) => [...prev, ...imported]);
+        const content = e.target?.result as string;
+        if (!content) {
+          setImportError('File is empty');
+          return;
+        }
+        
+        const data = JSON.parse(content);
+        
+        // Validate preset structure
+        const validation = validatePresetImport(data);
+        
+        if (!validation.valid) {
+          setImportError(validation.errors.join(', ') || 'Invalid preset format');
+          return;
+        }
+        
+        // Add only valid presets
+        setPresets((prev) => [...prev, ...validation.presets]);
+        
+        if (validation.errors.length > 0) {
+          console.warn('Some presets were skipped:', validation.errors);
+        }
       } catch (error) {
-        console.error('Failed to import presets:', error);
+        setImportError('Invalid JSON format');
+        console.error('Failed to parse preset file:', error);
       }
     };
+    
     reader.readAsText(file);
+  }, []);
+
+  const clearImportError = useCallback(() => {
+    setImportError(null);
   }, []);
 
   return {
@@ -133,5 +164,7 @@ export function usePresets() {
     duplicatePreset,
     exportPresets,
     importPresets,
+    importError,
+    clearImportError,
   };
 }

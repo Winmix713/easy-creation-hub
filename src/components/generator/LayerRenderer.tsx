@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import React, { useMemo, memo } from 'react';
 import { motion } from 'framer-motion';
 import { Layer } from '@/types/layers';
 import { getPerCornerSuperellipsePath, getSuperellipsePath } from '@/utils/math';
@@ -9,16 +9,21 @@ interface LayerRendererProps {
   onTransformUpdate?: (layerId: string, transform: Partial<Layer['transform']>) => void;
 }
 
-export function LayerRenderer({ layer, isSelected = false, onTransformUpdate }: LayerRendererProps) {
-  // Skip if layer is not visible
-  if (!layer.visible || layer.type !== 'shape' || !layer.content?.superellipseState) {
-    return null;
-  }
+/**
+ * LayerRenderer Component
+ * Renders a single layer with all its effects (glow, blur, noise)
+ * Memoized for performance optimization
+ */
+export const LayerRenderer = memo(function LayerRenderer({ 
+  layer, 
+  isSelected = false, 
+  onTransformUpdate 
+}: LayerRendererProps) {
+  const state = layer.content?.superellipseState;
 
-  const state = layer.content.superellipseState;
-
-  // Calculate superellipse path
+  // All hooks must be called before any conditional returns
   const pathData = useMemo(() => {
+    if (!state) return '';
     if (state.useIndividualCorners) {
       return getPerCornerSuperellipsePath(state.width, state.height, {
         tl: state.cornerExponents.topLeft,
@@ -29,42 +34,22 @@ export function LayerRenderer({ layer, isSelected = false, onTransformUpdate }: 
     } else {
       return getSuperellipsePath(state.width, state.height, state.exponent);
     }
-  }, [
-    state.width,
-    state.height,
-    state.exponent,
-    state.useIndividualCorners,
-    state.cornerExponents,
-  ]);
+  }, [state]);
 
-  // Generate fill style
-  const fillStyle = useMemo(() => {
-    if (state.fillType === 'solid') {
-      return state.solidColor;
-    } else if (state.fillType === 'linear') {
-      const stops = state.gradientStops
-        .map((stop) => `${stop.color} ${stop.position}%`)
-        .join(', ');
-      return `linear-gradient(${state.gradientAngle}deg, ${stops})`;
-    } else if (state.fillType === 'radial') {
-      const stops = state.gradientStops
-        .map((stop) => `${stop.color} ${stop.position}%`)
-        .join(', ');
-      return `radial-gradient(circle, ${stops})`;
-    } else if (state.fillType === 'conic') {
-      const stops = state.gradientStops
-        .map((stop) => `${stop.color} ${stop.position}%`)
-        .join(', ');
-      return `conic-gradient(from ${state.gradientAngle}deg, ${stops})`;
-    }
-    return state.solidColor;
-  }, [state.fillType, state.solidColor, state.gradientStops, state.gradientAngle]);
-
-  // Calculate transform
-  const transform = useMemo(() => {
+  const transformStyle = useMemo(() => {
     const { x, y, rotation, scaleX, scaleY } = layer.transform;
     return `translate(${x}px, ${y}px) rotate(${rotation}deg) scale(${scaleX / 100}, ${scaleY / 100})`;
   }, [layer.transform]);
+
+  const noiseSvg = useMemo(() => 
+    "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='200' height='200'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' /></filter><rect width='100%' height='100%' filter='url(%23n)' /></svg>",
+    []
+  );
+
+  // Now we can have conditional returns after all hooks
+  if (!layer.visible || layer.type !== 'shape' || !state) {
+    return null;
+  }
 
   return (
     <motion.div
@@ -72,13 +57,13 @@ export function LayerRenderer({ layer, isSelected = false, onTransformUpdate }: 
       style={{
         mixBlendMode: layer.blendMode,
         opacity: layer.opacity / 100,
-        transform,
+        transform: transformStyle,
         zIndex: layer.zIndex,
         pointerEvents: layer.locked ? 'none' : 'auto',
       }}
       initial={{ opacity: 0, scale: 0.9 }}
       animate={{ opacity: layer.opacity / 100, scale: 1 }}
-      transition={{ duration: 0.3, ease: [0.4, 0, 0.2, 1] }}
+      transition={{ duration: 0.3, ease: [0.4, 0, 0.2, 1] as [number, number, number, number] }}
     >
       {/* Glow layers */}
       {state.glowEnabled && state.glowLayers.map((glow, index) => (
@@ -177,7 +162,7 @@ export function LayerRenderer({ layer, isSelected = false, onTransformUpdate }: 
             width: state.width,
             height: state.height,
             opacity: state.noiseOpacity / 100,
-            backgroundImage: `url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='200' height='200'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' /></filter><rect width='100%' height='100%' filter='url(%23n)' /></svg>")`,
+            backgroundImage: `url("${noiseSvg}")`,
             backgroundRepeat: 'repeat',
             backgroundSize: '200px 200px',
             mixBlendMode: 'overlay',
@@ -186,4 +171,15 @@ export function LayerRenderer({ layer, isSelected = false, onTransformUpdate }: 
       )}
     </motion.div>
   );
-}
+}, (prevProps, nextProps) => {
+  // Custom comparison for better memoization
+  return (
+    prevProps.layer.id === nextProps.layer.id &&
+    prevProps.layer.visible === nextProps.layer.visible &&
+    prevProps.layer.opacity === nextProps.layer.opacity &&
+    prevProps.layer.zIndex === nextProps.layer.zIndex &&
+    prevProps.isSelected === nextProps.isSelected &&
+    JSON.stringify(prevProps.layer.transform) === JSON.stringify(nextProps.layer.transform) &&
+    JSON.stringify(prevProps.layer.content) === JSON.stringify(nextProps.layer.content)
+  );
+});
