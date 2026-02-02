@@ -1,5 +1,5 @@
 import { useState, useMemo, useCallback } from "react";
-import { motion } from "motion/react";
+import { motion } from "framer-motion";
 import { SuperellipseState, Layer } from "@/types/layers";
 import { cn } from "@/lib/utils";
 import { LayerRenderer } from "./LayerRenderer";
