@@ -74,7 +74,7 @@ export function ColorTab({
               <input
                 type="range"
                 value={state.gradientAngle}
-                onChange={(e) => onUpdate({ gradientAngle: Number(e.target.value) })}
+                onChange={(e) => onUpdate({ gradientAngle: validateNumber(Number(e.target.value), 0, 360) })}
                 min={0}
                 max={360}
                 className="w-full"
