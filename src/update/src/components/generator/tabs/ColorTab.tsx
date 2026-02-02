@@ -48,13 +48,13 @@ export function ColorTab({
             <input
               type="color"
               value={state.solidColor}
-              onChange={(e) => onUpdate({ solidColor: e.target.value })}
+              onChange={(e) => onUpdate({ solidColor: validateHexColor(e.target.value) })}
               className="w-12 h-10 rounded cursor-pointer"
             />
             <input
               type="text"
               value={state.solidColor}
-              onChange={(e) => onUpdate({ solidColor: e.target.value })}
+              onChange={(e) => onUpdate({ solidColor: validateHexColor(e.target.value) })}
               className="flex-1 bg-neutral-800 border border-neutral-700 rounded px-3 py-2 text-white font-mono text-sm"
             />
           </div>
