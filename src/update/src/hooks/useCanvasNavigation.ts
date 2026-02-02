@@ -52,6 +52,9 @@ export function useCanvasNavigation() {
 
   // Handle space + drag for panning
   useEffect(() => {
+    /**
+     * Handle space key down - enables panning mode
+     */
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.code === 'Space' && !isPanning) {
         e.preventDefault();
@@ -59,15 +62,20 @@ export function useCanvasNavigation() {
       }
     };
 
+    /**
+     * Handle space key up - disables panning mode
+     */
     const handleKeyUp = (e: KeyboardEvent) => {
       if (e.code === 'Space') {
         setIsPanning(false);
       }
     };
 
+    // Add listeners to window
     window.addEventListener('keydown', handleKeyDown);
     window.addEventListener('keyup', handleKeyUp);
 
+    // Cleanup: Always remove listeners when effect unmounts
     return () => {
       window.removeEventListener('keydown', handleKeyDown);
       window.removeEventListener('keyup', handleKeyUp);
