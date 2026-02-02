@@ -75,10 +75,10 @@ export function ShapeTab({ state, onUpdate }: ShapeTabProps) {
             <input
               type="range"
               value={state.exponent}
-              onChange={(e) => onUpdate({ exponent: Number(e.target.value) })}
-              min={0.5}
-              max={10}
-              step={0.1}
+              onChange={(e) => onUpdate({ exponent: validateExponent(Number(e.target.value)) })}
+              min={SHAPE_BOUNDS.EXPONENT.MIN}
+              max={SHAPE_BOUNDS.EXPONENT.MAX}
+              step={SHAPE_BOUNDS.EXPONENT.STEP}
               className="w-full"
             />
             <div className="flex justify-between text-xs text-neutral-500 mt-1">
@@ -99,17 +99,17 @@ export function ShapeTab({ state, onUpdate }: ShapeTabProps) {
                   onUpdate({
                     cornerExponents: {
                       ...state.cornerExponents,
-                      topLeft: Number(e.target.value),
+                      topLeft: validateExponent(Number(e.target.value)),
                     },
                   })
                 }
-                min={0.5}
-                max={10}
-                step={0.1}
+                min={SHAPE_BOUNDS.EXPONENT.MIN}
+                max={SHAPE_BOUNDS.EXPONENT.MAX}
+                step={SHAPE_BOUNDS.EXPONENT.STEP}
                 className="w-full bg-neutral-800 border border-neutral-700 rounded px-3 py-2 text-white"
               />
             </div>
-            
+
             <div>
               <label className="text-xs text-neutral-400 mb-1 block">Top Right</label>
               <input
@@ -119,17 +119,17 @@ export function ShapeTab({ state, onUpdate }: ShapeTabProps) {
                   onUpdate({
                     cornerExponents: {
                       ...state.cornerExponents,
-                      topRight: Number(e.target.value),
+                      topRight: validateExponent(Number(e.target.value)),
                     },
                   })
                 }
-                min={0.5}
-                max={10}
-                step={0.1}
+                min={SHAPE_BOUNDS.EXPONENT.MIN}
+                max={SHAPE_BOUNDS.EXPONENT.MAX}
+                step={SHAPE_BOUNDS.EXPONENT.STEP}
                 className="w-full bg-neutral-800 border border-neutral-700 rounded px-3 py-2 text-white"
               />
             </div>
-            
+
             <div>
               <label className="text-xs text-neutral-400 mb-1 block">Bottom Left</label>
               <input
@@ -139,17 +139,17 @@ export function ShapeTab({ state, onUpdate }: ShapeTabProps) {
                   onUpdate({
                     cornerExponents: {
                       ...state.cornerExponents,
-                      bottomLeft: Number(e.target.value),
+                      bottomLeft: validateExponent(Number(e.target.value)),
                     },
                   })
                 }
-                min={0.5}
-                max={10}
-                step={0.1}
+                min={SHAPE_BOUNDS.EXPONENT.MIN}
+                max={SHAPE_BOUNDS.EXPONENT.MAX}
+                step={SHAPE_BOUNDS.EXPONENT.STEP}
                 className="w-full bg-neutral-800 border border-neutral-700 rounded px-3 py-2 text-white"
               />
             </div>
-            
+
             <div>
               <label className="text-xs text-neutral-400 mb-1 block">Bottom Right</label>
               <input
@@ -159,13 +159,13 @@ export function ShapeTab({ state, onUpdate }: ShapeTabProps) {
                   onUpdate({
                     cornerExponents: {
                       ...state.cornerExponents,
-                      bottomRight: Number(e.target.value),
+                      bottomRight: validateExponent(Number(e.target.value)),
                     },
                   })
                 }
-                min={0.5}
-                max={10}
-                step={0.1}
+                min={SHAPE_BOUNDS.EXPONENT.MIN}
+                max={SHAPE_BOUNDS.EXPONENT.MAX}
+                step={SHAPE_BOUNDS.EXPONENT.STEP}
                 className="w-full bg-neutral-800 border border-neutral-700 rounded px-3 py-2 text-white"
               />
             </div>
