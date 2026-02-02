@@ -69,17 +69,9 @@ export function parseHSL(color: string): { h: number; s: number; l: number } | n
   );
   if (hslMatch) {
     return {
-      h: validateNumber(parseFloat(hslMatch[1]), COLOR_SPACE.HSL.HUE.MIN, COLOR_SPACE.HSL.HUE.MAX),
-      s: validateNumber(
-        parseFloat(hslMatch[2]),
-        COLOR_SPACE.HSL.SATURATION.MIN,
-        COLOR_SPACE.HSL.SATURATION.MAX
-      ),
-      l: validateNumber(
-        parseFloat(hslMatch[3]),
-        COLOR_SPACE.HSL.LIGHTNESS.MIN,
-        COLOR_SPACE.HSL.LIGHTNESS.MAX
-      ),
+      h: validateNumber(parseFloat(hslMatch[1]), 0, 360),
+      s: validateNumber(parseFloat(hslMatch[2]), 0, 100),
+      l: validateNumber(parseFloat(hslMatch[3]), 0, 100),
     };
   }
 
