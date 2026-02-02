@@ -89,7 +89,7 @@ export function useSuperellipse() {
   };
 
   const resetState = () => {
-    setState(DEFAULT_STATE);
+    setState(DEFAULT_SUPERELLIPSE_STATE);
   };
 
   const loadState = (newState: SuperellipseState) => {
