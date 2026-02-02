@@ -97,25 +97,11 @@ export default function App() {
   const [noiseIntensity, setNoiseIntensity] = useState<number>(0.35);
 
   // ============================================================================
-  // Local State - Animation
-  // ============================================================================
-  
-  const [animationEnabled, setAnimationEnabled] = useState<boolean>(false);
-  const [animationType, setAnimationType] = useState<'pulse' | 'rotate' | 'wave'>('pulse');
-  const [animationSpeed, setAnimationSpeed] = useState<number>(1);
-
-  // ============================================================================
-  // Local State - Scene Settings
-  // ============================================================================
-  
-  const [globalScale, setGlobalScale] = useState<number>(1);
-  const [gradientMaskIntensity, setGradientMaskIntensity] = useState<number>(0.7);
-  const [sceneNoiseOverlay, setSceneNoiseOverlay] = useState<boolean>(true);
-
-  // ============================================================================
   // Local State - Modals
   // ============================================================================
-  
+  // Note: Animation and scene settings are not currently used in rendering
+  // They should be moved to EditorContext when animation features are implemented
+
   const [isExportModalOpen, setIsExportModalOpen] = useState<boolean>(false);
   const [isShortcutsModalOpen, setIsShortcutsModalOpen] = useState<boolean>(false);
 
