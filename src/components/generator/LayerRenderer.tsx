@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { motion } from 'motion/react';
+import { motion } from 'framer-motion';
 import { Layer } from '@/types/layers';
 import { getPerCornerSuperellipsePath, getSuperellipsePath } from '@/utils/math';
 
