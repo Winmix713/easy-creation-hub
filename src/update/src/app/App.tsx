@@ -102,7 +102,7 @@ export default function App() {
   const {
     noiseEnabled,
     noiseIntensity,
-  } = useEditor();
+  } = useNoiseSettings();
 
   // ============================================================================
   // Context State - Modals (from EditorContext)
