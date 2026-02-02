@@ -43,9 +43,9 @@ export function hexToHsl(hex: string): { h: number; s: number; l: number } | nul
  */
 export function hslToHex(h: number, s: number, l: number): string {
   // Validate inputs
-  h = validateNumber(h, COLOR_SPACE.HSL.HUE.MIN, COLOR_SPACE.HSL.HUE.MAX);
-  s = validateNumber(s, COLOR_SPACE.HSL.SATURATION.MIN, COLOR_SPACE.HSL.SATURATION.MAX);
-  l = validateNumber(l, COLOR_SPACE.HSL.LIGHTNESS.MIN, COLOR_SPACE.HSL.LIGHTNESS.MAX);
+  h = validateNumber(h, 0, 360);
+  s = validateNumber(s, 0, 100);
+  l = validateNumber(l, 0, 100);
 
   const rgb = hslToRgb(h, s, l);
   return rgbToHex(rgb.r, rgb.g, rgb.b);
