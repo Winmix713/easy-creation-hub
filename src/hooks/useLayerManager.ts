@@ -1,108 +1,163 @@
 import { useState, useCallback } from 'react';
-import { Layer, LayerType, BlendMode, Transform } from '@/types';
+import { Layer, LayerType, BlendMode, Transform, SuperellipseState, GradientStop } from '@/types/layers';
 
-const createDefaultTransform = (): Transform => ({
-  x: 0,
-  y: 0,
-  rotation: 0,
-  scaleX: 1,
-  scaleY: 1,
-});
+interface HistoryState {
+  layers: Layer[];
+  selectedLayerId: string | null;
+}
 
-const createLayer = (type: LayerType, name: string): Layer => ({
-  id: Date.now().toString() + Math.random().toString(36).substr(2, 9),
-  name,
-  type,
-  visible: true,
-  locked: false,
-  opacity: 100,
-  blendMode: 'normal',
-  transform: createDefaultTransform(),
-  createdAt: Date.now(),
-  updatedAt: Date.now(),
-});
+const MAX_HISTORY = 50;
 
-/**
- * Hook for managing layers with undo/redo history
- */
-export const useLayerManager = () => {
-  const [layers, setLayers] = useState<Layer[]>([
-    createLayer('shape', 'Shape 1'),
-  ]);
+// Default SuperellipseState for new layers
+const DEFAULT_SUPERELLIPSE_STATE: SuperellipseState = {
+  width: 200,
+  height: 200,
+  exponent: 4,
+  cornerExponents: {
+    topLeft: 4,
+    topRight: 4,
+    bottomRight: 4,
+    bottomLeft: 4,
+  },
+  useIndividualCorners: false,
+  lockAspectRatio: false,
+  fillType: 'linear',
+  solidColor: '#667eea',
+  gradientStops: [
+    { id: '1', color: '#667eea', position: 0 },
+    { id: '2', color: '#764ba2', position: 100 },
+  ],
+  gradientAngle: 135,
+  glowEnabled: true,
+  glowIntensity: 100,
+  glowColor: '#667eea',
+  glowLayers: [
+    { id: '1', blur: 8, opacity: 80, enabled: true },
+    { id: '2', blur: 24, opacity: 60, enabled: true },
+    { id: '3', blur: 48, opacity: 40, enabled: true },
+    { id: '4', blur: 96, opacity: 20, enabled: true },
+  ],
+  blur: 0,
+  backdropBlur: 0,
+  strokeWidth: 0,
+  strokeColor: '#000000',
+  noiseOpacity: 0,
+  backgroundColor: '#1a1a1a',
+};
+
+export function useLayerManager() {
+  const [layers, setLayers] = useState<Layer[]>([]);
   const [selectedLayerId, setSelectedLayerId] = useState<string | null>(null);
-  const [history, setHistory] = useState<Layer[][]>([]);
+  const [history, setHistory] = useState<HistoryState[]>([]);
   const [historyIndex, setHistoryIndex] = useState(-1);
 
-  const saveToHistory = useCallback((newLayers: Layer[]) => {
-    setHistory(prev => [...prev.slice(0, historyIndex + 1), newLayers]);
-    setHistoryIndex(prev => prev + 1);
+  const saveHistory = useCallback((newLayers: Layer[], newSelectedId: string | null) => {
+    setHistory((prev) => {
+      const newHistory = prev.slice(0, historyIndex + 1);
+      newHistory.push({ layers: newLayers, selectedLayerId: newSelectedId });
+      return newHistory.slice(-MAX_HISTORY);
+    });
+    setHistoryIndex((prev) => Math.min(prev + 1, MAX_HISTORY - 1));
   }, [historyIndex]);
 
-  const selectedLayer = layers.find(l => l.id === selectedLayerId) || null;
-
   const addLayer = useCallback((type: LayerType) => {
-    const newLayer = createLayer(type, `${type.charAt(0).toUpperCase() + type.slice(1)} ${layers.length + 1}`);
+    const newLayer: Layer = {
+      id: Date.now().toString(),
+      name: `${type.charAt(0).toUpperCase() + type.slice(1)} ${layers.length + 1}`,
+      type,
+      visible: true,
+      locked: false,
+      solo: false,
+      opacity: 100,
+      blendMode: 'normal',
+      transform: {
+        x: 0,
+        y: 0,
+        rotation: 0,
+        scaleX: 100,
+        scaleY: 100,
+        anchor: 'center',
+      },
+      effects: [],
+      parentId: null,
+      zIndex: layers.length,
+      content: {
+        superellipseState: type === 'shape' ? { ...DEFAULT_SUPERELLIPSE_STATE } : undefined,
+      },
+    };
+
     const newLayers = [...layers, newLayer];
     setLayers(newLayers);
     setSelectedLayerId(newLayer.id);
-    saveToHistory(newLayers);
-  }, [layers, saveToHistory]);
+    saveHistory(newLayers, newLayer.id);
+  }, [layers, saveHistory]);
 
   const removeLayer = useCallback((id: string) => {
-    const newLayers = layers.filter(l => l.id !== id);
+    const newLayers = layers.filter((layer) => layer.id !== id);
     setLayers(newLayers);
     if (selectedLayerId === id) {
-      setSelectedLayerId(newLayers.length > 0 ? newLayers[0].id : null);
+      setSelectedLayerId(null);
     }
-    saveToHistory(newLayers);
-  }, [layers, selectedLayerId, saveToHistory]);
+    saveHistory(newLayers, selectedLayerId === id ? null : selectedLayerId);
+  }, [layers, selectedLayerId, saveHistory]);
 
   const updateLayer = useCallback((id: string, updates: Partial<Layer>) => {
-    const newLayers = layers.map(l =>
-      l.id === id ? { ...l, ...updates, updatedAt: Date.now() } : l
+    const newLayers = layers.map((layer) =>
+      layer.id === id ? { ...layer, ...updates } : layer
     );
     setLayers(newLayers);
-  }, [layers]);
+    saveHistory(newLayers, selectedLayerId);
+  }, [layers, selectedLayerId, saveHistory]);
 
   const duplicateLayer = useCallback((id: string) => {
-    const layer = layers.find(l => l.id === id);
+    const layer = layers.find((l) => l.id === id);
     if (!layer) return;
 
     const newLayer: Layer = {
       ...layer,
-      id: Date.now().toString() + Math.random().toString(36).substr(2, 9),
+      id: Date.now().toString(),
       name: `${layer.name} Copy`,
-      createdAt: Date.now(),
-      updatedAt: Date.now(),
+      zIndex: layers.length,
     };
+
     const newLayers = [...layers, newLayer];
     setLayers(newLayers);
     setSelectedLayerId(newLayer.id);
-    saveToHistory(newLayers);
-  }, [layers, saveToHistory]);
+    saveHistory(newLayers, newLayer.id);
+  }, [layers, saveHistory]);
 
   const toggleVisibility = useCallback((id: string) => {
-    setLayers(prev =>
-      prev.map(l => (l.id === id ? { ...l, visible: !l.visible } : l))
+    const newLayers = layers.map((layer) =>
+      layer.id === id ? { ...layer, visible: !layer.visible } : layer
     );
-  }, []);
+    setLayers(newLayers);
+    saveHistory(newLayers, selectedLayerId);
+  }, [layers, selectedLayerId, saveHistory]);
 
   const toggleLock = useCallback((id: string) => {
-    setLayers(prev =>
-      prev.map(l => (l.id === id ? { ...l, locked: !l.locked } : l))
+    const newLayers = layers.map((layer) =>
+      layer.id === id ? { ...layer, locked: !layer.locked } : layer
     );
-  }, []);
+    setLayers(newLayers);
+    saveHistory(newLayers, selectedLayerId);
+  }, [layers, selectedLayerId, saveHistory]);
 
-  const reorderLayers = useCallback((startIndex: number, endIndex: number) => {
-    const result = Array.from(layers);
-    const [removed] = result.splice(startIndex, 1);
-    result.splice(endIndex, 0, removed);
-    setLayers(result);
-    saveToHistory(result);
-  }, [layers, saveToHistory]);
+  const reorderLayers = useCallback((fromIndex: number, toIndex: number) => {
+    const newLayers = [...layers];
+    const [removed] = newLayers.splice(fromIndex, 1);
+    newLayers.splice(toIndex, 0, removed);
+    
+    // Update zIndex
+    newLayers.forEach((layer, index) => {
+      layer.zIndex = index;
+    });
 
-  const setBlendMode = useCallback((id: string, mode: string) => {
-    updateLayer(id, { blendMode: mode as BlendMode });
+    setLayers(newLayers);
+    saveHistory(newLayers, selectedLayerId);
+  }, [layers, selectedLayerId, saveHistory]);
+
+  const setBlendMode = useCallback((id: string, mode: BlendMode) => {
+    updateLayer(id, { blendMode: mode });
   }, [updateLayer]);
 
   const setOpacity = useCallback((id: string, opacity: number) => {
@@ -110,9 +165,12 @@ export const useLayerManager = () => {
   }, [updateLayer]);
 
   const updateTransform = useCallback((id: string, transform: Partial<Transform>) => {
-    const layer = layers.find(l => l.id === id);
+    const layer = layers.find((l) => l.id === id);
     if (!layer) return;
-    updateLayer(id, { transform: { ...layer.transform, ...transform } });
+
+    updateLayer(id, {
+      transform: { ...layer.transform, ...transform },
+    });
   }, [layers, updateLayer]);
 
   const updateLayerName = useCallback((id: string, name: string) => {
@@ -121,20 +179,25 @@ export const useLayerManager = () => {
 
   const undo = useCallback(() => {
     if (historyIndex > 0) {
-      setHistoryIndex(prev => prev - 1);
-      setLayers(history[historyIndex - 1]);
+      const newIndex = historyIndex - 1;
+      const state = history[newIndex];
+      setLayers(state.layers);
+      setSelectedLayerId(state.selectedLayerId);
+      setHistoryIndex(newIndex);
     }
   }, [history, historyIndex]);
 
   const redo = useCallback(() => {
     if (historyIndex < history.length - 1) {
-      setHistoryIndex(prev => prev + 1);
-      setLayers(history[historyIndex + 1]);
+      const newIndex = historyIndex + 1;
+      const state = history[newIndex];
+      setLayers(state.layers);
+      setSelectedLayerId(state.selectedLayerId);
+      setHistoryIndex(newIndex);
     }
   }, [history, historyIndex]);
 
-  const canUndo = historyIndex > 0;
-  const canRedo = historyIndex < history.length - 1;
+  const selectedLayer = layers.find((l) => l.id === selectedLayerId);
 
   return {
     layers,
@@ -154,7 +217,7 @@ export const useLayerManager = () => {
     updateLayerName,
     undo,
     redo,
-    canUndo,
-    canRedo,
+    canUndo: historyIndex > 0,
+    canRedo: historyIndex < history.length - 1,
   };
-};
+}

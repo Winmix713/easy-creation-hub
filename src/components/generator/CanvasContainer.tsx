@@ -1,6 +1,6 @@
-import React, { memo, RefObject } from 'react';
-import { SuperellipseState, Layer } from '@/types';
-import { ZoomIn, ZoomOut, Maximize, Move } from 'lucide-react';
+import { ZoomIn, ZoomOut, Maximize2, RotateCcw } from 'lucide-react';
+import { PreviewArea } from './PreviewArea';
+import { SuperellipseState, Layer } from '@/types/layers';
 
 interface CanvasContainerProps {
   state: SuperellipseState;
@@ -11,31 +11,30 @@ interface CanvasContainerProps {
   panX: number;
   panY: number;
   isPanning: boolean;
-  containerRef: RefObject<HTMLDivElement>;
+  containerRef: React.RefObject<HTMLDivElement>;
   onZoomIn: () => void;
   onZoomOut: () => void;
   onResetView: () => void;
   onZoomTo100: () => void;
   onMouseDown: (e: React.MouseEvent) => void;
   onMouseMove: (e: React.MouseEvent) => void;
-  onTransformUpdate: (id: string, transform: any) => void;
-  glowEnabled: boolean;
-  maskSize: number;
-  glowScale: number;
-  positionX: number;
-  positionY: number;
-  noiseEnabled: boolean;
-  noiseIntensity: number;
-  onRandomColor: () => void;
+  onTransformUpdate?: (layerId: string, transform: Partial<Layer['transform']>) => void;
+  // New glow editor props
+  glowEnabled?: boolean;
+  maskSize?: number;
+  glowScale?: number;
+  positionX?: number;
+  positionY?: number;
+  noiseEnabled?: boolean;
+  noiseIntensity?: number;
+  onRandomColor?: () => void;
 }
 
-/**
- * Canvas Container Component
- * Displays the superellipse with zoom/pan controls
- */
-export const CanvasContainer: React.FC<CanvasContainerProps> = memo(({
+export function CanvasContainer({
   state,
   pathData,
+  layers,
+  selectedLayerId,
   zoom,
   panX,
   panY,
@@ -47,125 +46,108 @@ export const CanvasContainer: React.FC<CanvasContainerProps> = memo(({
   onZoomTo100,
   onMouseDown,
   onMouseMove,
-  glowEnabled,
-  noiseEnabled,
-}) => {
-  // Generate gradient ID
-  const gradientId = 'superellipse-gradient';
-
+  onTransformUpdate,
+  glowEnabled = true,
+  maskSize = 0.3,
+  glowScale = 0.9,
+  positionX = -590,
+  positionY = -1070,
+  noiseEnabled = true,
+  noiseIntensity = 0.35,
+  onRandomColor = () => {},
+}: CanvasContainerProps) {
   return (
-    <div 
-      ref={containerRef}
-      className="flex-1 relative bg-canvas-bg overflow-hidden"
-      onMouseDown={onMouseDown}
-      onMouseMove={onMouseMove}
-      style={{ cursor: isPanning ? 'grabbing' : 'default' }}
-    >
-      {/* Canvas Grid Background */}
-      <div className="absolute inset-0 canvas-grid opacity-30" />
+    <div className="relative flex-1 flex flex-col bg-neutral-900">
+      {/* Toolbar */}
+      <div className="h-12 border-b border-neutral-800 flex items-center justify-between px-4">
+        <div className="flex items-center gap-2">
+          <h2 className="font-semibold text-white">Canvas Preview</h2>
+          <span className="text-xs text-neutral-500">
+            {state.width} × {state.height}px
+          </span>
+        </div>
 
-      {/* Zoom Controls */}
-      <div className="absolute top-4 left-4 flex items-center gap-2 z-10">
-        <div className="bg-card/90 backdrop-blur-sm rounded-lg border border-border flex items-center">
+        <div className="flex items-center gap-2">
           <button
             onClick={onZoomOut}
-            className="p-2 hover:bg-secondary/50 transition-colors rounded-l-lg"
-            title="Zoom Out"
+            className="p-2 hover:bg-neutral-800 rounded transition-colors text-white"
+            title="Zoom Out (Ctrl + -)"
           >
             <ZoomOut className="w-4 h-4" />
           </button>
-          <span className="px-3 text-sm font-mono min-w-[60px] text-center">
-            {Math.round(zoom * 100)}%
-          </span>
+          
+          <button
+            onClick={onZoomTo100}
+            className="px-3 py-1 hover:bg-neutral-800 rounded transition-colors text-white text-sm font-mono"
+            title="Zoom to 100% (Ctrl + 1)"
+          >
+            {zoom}%
+          </button>
+          
           <button
             onClick={onZoomIn}
-            className="p-2 hover:bg-secondary/50 transition-colors rounded-r-lg"
-            title="Zoom In"
+            className="p-2 hover:bg-neutral-800 rounded transition-colors text-white"
+            title="Zoom In (Ctrl + +)"
           >
             <ZoomIn className="w-4 h-4" />
           </button>
-        </div>
-        <button
-          onClick={onZoomTo100}
-          className="p-2 bg-card/90 backdrop-blur-sm rounded-lg border border-border hover:bg-secondary/50 transition-colors"
-          title="Zoom to 100%"
-        >
-          <Maximize className="w-4 h-4" />
-        </button>
-        <button
-          onClick={onResetView}
-          className="p-2 bg-card/90 backdrop-blur-sm rounded-lg border border-border hover:bg-secondary/50 transition-colors"
-          title="Reset View"
-        >
-          <Move className="w-4 h-4" />
-        </button>
-      </div>
-
-      {/* Canvas Content */}
-      <div 
-        className="absolute inset-0 flex items-center justify-center"
-        style={{
-          transform: `translate(${panX}px, ${panY}px) scale(${zoom})`,
-          transformOrigin: 'center center',
-        }}
-      >
-        {/* Glow Effect */}
-        {glowEnabled && (
-          <div 
-            className="absolute rounded-full blur-3xl opacity-50"
-            style={{
-              width: state.width * 2,
-              height: state.height * 2,
-              background: state.useGradient 
-                ? `linear-gradient(${state.gradientAngle}deg, ${state.gradientStops.map(s => s.color).join(', ')})`
-                : state.solidColor,
-            }}
-          />
-        )}
-
-        {/* Superellipse SVG */}
-        <svg
-          width={state.width}
-          height={state.height}
-          viewBox={`0 0 ${state.width} ${state.height}`}
-          className="relative z-10"
-        >
-          <defs>
-            <linearGradient
-              id={gradientId}
-              gradientTransform={`rotate(${state.gradientAngle})`}
-            >
-              {state.gradientStops.map((stop) => (
-                <stop
-                  key={stop.id}
-                  offset={`${stop.position * 100}%`}
-                  stopColor={stop.color}
-                />
-              ))}
-            </linearGradient>
-          </defs>
           
-          <path
-            d={pathData}
-            fill={state.useGradient ? `url(#${gradientId})` : state.solidColor}
-            stroke={state.hasStroke ? state.strokeColor : 'none'}
-            strokeWidth={state.strokeWidth}
-            className="drop-shadow-2xl"
-          />
-        </svg>
-
-        {/* Noise Overlay */}
-        {noiseEnabled && (
-          <div className="absolute inset-0 noise-overlay pointer-events-none" />
-        )}
+          <div className="w-px h-6 bg-neutral-700 mx-1" />
+          
+          <button
+            onClick={onResetView}
+            className="p-2 hover:bg-neutral-800 rounded transition-colors text-white"
+            title="Fit to View (Ctrl + 0)"
+          >
+            <Maximize2 className="w-4 h-4" />
+          </button>
+          
+          <button
+            onClick={onResetView}
+            className="p-2 hover:bg-neutral-800 rounded transition-colors text-white"
+            title="Reset Pan"
+          >
+            <RotateCcw className="w-4 h-4" />
+          </button>
+        </div>
       </div>
 
-      {/* Canvas Info */}
-      <div className="absolute bottom-4 left-4 bg-card/90 backdrop-blur-sm rounded-lg border border-border px-3 py-2 text-xs font-mono text-muted-foreground">
-        {state.width} × {state.height}px • n={state.n.toFixed(2)}
+      {/* Canvas Area */}
+      <div
+        ref={containerRef}
+        className={`flex-1 relative ${isPanning ? 'cursor-grab active:cursor-grabbing' : 'cursor-default'}`}
+        onMouseDown={onMouseDown}
+        onMouseMove={onMouseMove}
+      >
+        <PreviewArea
+          state={state}
+          pathData={pathData}
+          layers={layers}
+          selectedLayerId={selectedLayerId}
+          zoom={zoom}
+          panX={panX}
+          panY={panY}
+          glowEnabled={glowEnabled}
+          maskSize={maskSize}
+          glowScale={glowScale}
+          positionX={positionX}
+          positionY={positionY}
+          noiseEnabled={noiseEnabled}
+          noiseIntensity={noiseIntensity}
+          onRandomColor={onRandomColor}
+          onTransformUpdate={onTransformUpdate}
+        />
+      </div>
+
+      {/* Help text */}
+      <div className="absolute bottom-4 left-4 bg-black/70 text-white px-3 py-2 rounded-lg text-xs">
+        <p className="mb-1">
+          <kbd className="bg-neutral-800 px-1 rounded">Space</kbd> + Drag to pan
+        </p>
+        <p>
+          <kbd className="bg-neutral-800 px-1 rounded">Ctrl</kbd> + Scroll to zoom
+        </p>
       </div>
     </div>
   );
-});
-
-CanvasContainer.displayName = 'CanvasContainer';
+}

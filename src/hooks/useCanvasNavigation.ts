@@ -1,83 +1,84 @@
-import { useState, useCallback, useRef, useEffect } from 'react';
+import { useState, useRef, useCallback, useEffect } from 'react';
 
-const MIN_ZOOM = 0.1;
-const MAX_ZOOM = 5;
-const ZOOM_STEP = 0.1;
-
-/**
- * Hook for managing canvas navigation (pan, zoom)
- */
-export const useCanvasNavigation = () => {
-  const [zoom, setZoom] = useState(1);
+export function useCanvasNavigation() {
+  const [zoom, setZoom] = useState(100);
   const [panX, setPanX] = useState(0);
   const [panY, setPanY] = useState(0);
   const [isPanning, setIsPanning] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
-  const lastMousePos = useRef({ x: 0, y: 0 });
+  const panStartRef = useRef({ x: 0, y: 0 });
 
   const zoomIn = useCallback(() => {
-    setZoom(prev => Math.min(prev + ZOOM_STEP, MAX_ZOOM));
+    setZoom((prev) => Math.min(prev + 25, 400));
   }, []);
 
   const zoomOut = useCallback(() => {
-    setZoom(prev => Math.max(prev - ZOOM_STEP, MIN_ZOOM));
+    setZoom((prev) => Math.max(prev - 25, 25));
   }, []);
 
   const resetView = useCallback(() => {
-    setZoom(1);
+    setZoom(100);
     setPanX(0);
     setPanY(0);
   }, []);
 
   const zoomTo100 = useCallback(() => {
-    setZoom(1);
+    setZoom(100);
   }, []);
 
-  const handleMouseDown = useCallback((e: React.MouseEvent) => {
-    if (e.button === 1 || (e.button === 0 && e.altKey)) {
-      e.preventDefault();
-      setIsPanning(true);
-      lastMousePos.current = { x: e.clientX, y: e.clientY };
-    }
-  }, []);
-
-  const handleMouseMove = useCallback((e: React.MouseEvent) => {
-    if (!isPanning) return;
-    
-    const deltaX = e.clientX - lastMousePos.current.x;
-    const deltaY = e.clientY - lastMousePos.current.y;
-    
-    setPanX(prev => prev + deltaX);
-    setPanY(prev => prev + deltaY);
-    
-    lastMousePos.current = { x: e.clientX, y: e.clientY };
-  }, [isPanning]);
-
-  const handleMouseUp = useCallback(() => {
-    setIsPanning(false);
-  }, []);
-
+  // Handle mouse wheel zoom
   useEffect(() => {
-    const handleGlobalMouseUp = () => setIsPanning(false);
-    window.addEventListener('mouseup', handleGlobalMouseUp);
-    return () => window.removeEventListener('mouseup', handleGlobalMouseUp);
-  }, []);
-
-  useEffect(() => {
-    const container = containerRef.current;
-    if (!container) return;
-
     const handleWheel = (e: WheelEvent) => {
       if (e.ctrlKey || e.metaKey) {
         e.preventDefault();
-        const delta = e.deltaY > 0 ? -ZOOM_STEP : ZOOM_STEP;
-        setZoom(prev => Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, prev + delta)));
+        const delta = e.deltaY > 0 ? -25 : 25;
+        setZoom((prev) => Math.max(25, Math.min(400, prev + delta)));
       }
     };
 
-    container.addEventListener('wheel', handleWheel, { passive: false });
-    return () => container.removeEventListener('wheel', handleWheel);
+    const container = containerRef.current;
+    if (container) {
+      container.addEventListener('wheel', handleWheel, { passive: false });
+      return () => container.removeEventListener('wheel', handleWheel);
+    }
   }, []);
+
+  // Handle space + drag for panning
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.code === 'Space' && !isPanning) {
+        e.preventDefault();
+        setIsPanning(true);
+      }
+    };
+
+    const handleKeyUp = (e: KeyboardEvent) => {
+      if (e.code === 'Space') {
+        setIsPanning(false);
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    window.addEventListener('keyup', handleKeyUp);
+
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+      window.removeEventListener('keyup', handleKeyUp);
+    };
+  }, [isPanning]);
+
+  const handleMouseDown = useCallback((e: React.MouseEvent) => {
+    if (isPanning) {
+      panStartRef.current = { x: e.clientX - panX, y: e.clientY - panY };
+    }
+  }, [isPanning, panX, panY]);
+
+  const handleMouseMove = useCallback((e: React.MouseEvent) => {
+    if (isPanning && e.buttons === 1) {
+      setPanX(e.clientX - panStartRef.current.x);
+      setPanY(e.clientY - panStartRef.current.y);
+    }
+  }, [isPanning]);
 
   return {
     zoom,
@@ -91,6 +92,5 @@ export const useCanvasNavigation = () => {
     zoomTo100,
     handleMouseDown,
     handleMouseMove,
-    handleMouseUp,
   };
-};
+}
